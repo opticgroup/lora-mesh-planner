@@ -33,10 +33,9 @@ async function getElevationProfile(lat1, lng1, lat2, lng2, samples = 50) {
             points.push({ lat, lng });
         }
         
-        // Use OpenTopography SRTM30 global dataset
-        // This is a free API that doesn't require authentication
+        // Use Open-Meteo Elevation API - free, no API key required, global coverage
         const elevationPromises = points.map(async (point, index) => {
-            const url = `https://cloud.sdsc.edu/v1/ocean/elevation?x=${point.lng}&y=${point.lat}`;
+            const url = `https://api.open-meteo.com/v1/elevation?latitude=${point.lat}&longitude=${point.lng}`;
             
             try {
                 const response = await fetch(url);
@@ -53,7 +52,7 @@ async function getElevationProfile(lat1, lng1, lat2, lng2, samples = 50) {
                 const data = await response.json();
                 return {
                     distance: calculateDistance(lat1, lng1, point.lat, point.lng),
-                    elevation: data.elevation || 100,
+                    elevation: data.elevation?.[0] || 100, // Open-Meteo returns array
                     lat: point.lat,
                     lng: point.lng
                 };

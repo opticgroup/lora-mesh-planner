@@ -8,6 +8,7 @@ class LoRaMeshPlanner {
         this.currentPower = 1.0; // Default 1W
         this.showCoverage = false;
         this.coverageOpacity = 0.3;
+        this.terrainModeling = false;
         
         // Map layer definitions
         this.mapLayers = {
@@ -31,6 +32,7 @@ class LoRaMeshPlanner {
     init() {
         this.initMap();
         this.bindEvents();
+        this.updateModelingStatus(); // Initialize status display
         this.loadFromStorage();
     }
 
@@ -83,6 +85,18 @@ class LoRaMeshPlanner {
         document.getElementById('showCoverage').addEventListener('change', (e) => {
             this.showCoverage = e.target.checked;
             this.toggleCoverage();
+        });
+        
+        // Terrain modeling toggle
+        document.getElementById('terrainModeling').addEventListener('change', (e) => {
+            this.terrainModeling = e.target.checked;
+            this.updateModelingStatus();
+            
+            // Re-generate all coverage if currently showing
+            if (this.showCoverage) {
+                this.hideAllCoverage();
+                this.showAllCoverage();
+            }
         });
         
         // Transparency slider
@@ -369,8 +383,8 @@ class LoRaMeshPlanner {
         this.coverageCircles.clear();
     }
 
-    showCoverageCircle(id, transmitter) {
-        // Estimate coverage radius based on power (simplified)
+    async showCoverageCircle(id, transmitter) {
+        // Always start with simple circle for fast, reliable coverage
         const radiusKm = transmitter.power >= 1.0 ? 15 : 8;
         const radiusMeters = radiusKm * 1000;
         
@@ -382,7 +396,115 @@ class LoRaMeshPlanner {
             weight: 1
         }).addTo(this.map);
         
+        // Add popup with option to generate terrain-based coverage
+        circle.bindPopup(`
+            <div class="coverage-popup">
+                <h4>📡 LoRa Coverage</h4>
+                <p><strong>Power:</strong> ${transmitter.power}W</p>
+                <p><strong>Radius:</strong> ${radiusKm} km (estimated)</p>
+                <button onclick="window.meshPlanner.generateTerrainCoverage('${id}')" style="
+                    background: #2563eb;
+                    color: white;
+                    border: none;
+                    padding: 6px 12px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 12px;
+                    margin-top: 8px;
+                ">🏔️ Generate Terrain-Based Coverage</button>
+                <p><small>Click button for detailed terrain analysis</small></p>
+            </div>
+        `);
+        
         this.coverageCircles.set(id, circle);
+        console.log(`✅ Simple coverage circle created for transmitter ${id}`);
+    }
+    
+    async generateTerrainCoverage(transmitterId) {
+        const transmitter = this.transmitters.get(transmitterId);
+        if (!transmitter) {
+            console.error(`Transmitter ${transmitterId} not found`);
+            return;
+        }
+        
+        console.log(`🏔️ Generating terrain-based coverage for transmitter ${transmitterId}`);
+        
+        // Show loading
+        this.showLoading(true);
+        
+        try {
+            // Generate terrain-based coverage polygon with moderate resolution to avoid crashes
+            const response = await fetch('/api/coverage', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    lat: transmitter.latlng.lat,
+                    lng: transmitter.latlng.lng,
+                    power: transmitter.power,
+                    resolution: 15, // 15 degree resolution = 24 rays (more conservative)
+                    maxRange: transmitter.power >= 1.0 ? 20 : 12 // Reduced max range for faster processing
+                })
+            });
+            
+            if (response.ok) {
+                const coverageData = await response.json();
+                
+                if (coverageData.success && coverageData.polygon && coverageData.polygon.length >= 3) {
+                    console.log(`✅ Received terrain data with ${coverageData.polygon.length} points`);
+                    
+                    // Remove the existing simple circle
+                    const existingCoverage = this.coverageCircles.get(transmitterId);
+                    if (existingCoverage) {
+                        this.map.removeLayer(existingCoverage);
+                    }
+                    
+                    // Sort points by angle to ensure proper polygon shape
+                    const sortedPoints = coverageData.polygon.sort((a, b) => a.angle - b.angle);
+                    
+                    // Convert polygon points to Leaflet format
+                    const polygonPoints = sortedPoints.map(point => [point.lat, point.lng]);
+                    
+                    // Create terrain-based coverage polygon
+                    const polygon = L.polygon(polygonPoints, {
+                        color: '#dc2626',
+                        fillColor: '#ef4444',
+                        fillOpacity: this.coverageOpacity,
+                        weight: 2,
+                        opacity: 0.8,
+                        smoothFactor: 1.0
+                    }).addTo(this.map);
+                    
+                    // Add detailed popup
+                    polygon.bindPopup(`
+                        <div class="coverage-popup">
+                            <h4>🌍 Terrain-Based Coverage</h4>
+                            <p><strong>Power:</strong> ${transmitter.power}W</p>
+                            <p><strong>Max Range:</strong> ${coverageData.maxRange.toFixed(1)} km</p>
+                            <p><strong>Avg Range:</strong> ${coverageData.avgRange.toFixed(1)} km</p>
+                            <p><strong>Analysis Points:</strong> ${coverageData.pointCount}</p>
+                            <p><small>✅ Real terrain & RF modeling</small></p>
+                        </div>
+                    `);
+                    
+                    // Replace the coverage area
+                    this.coverageCircles.set(transmitterId, polygon);
+                    
+                    this.showLoading(false);
+                    alert(`✅ Terrain-based coverage generated!\n\nMax Range: ${coverageData.maxRange.toFixed(1)} km\nAvg Range: ${coverageData.avgRange.toFixed(1)} km`);
+                    return;
+                } else {
+                    throw new Error('Invalid coverage data received');
+                }
+            } else {
+                throw new Error(`API responded with status ${response.status}`);
+            }
+        } catch (error) {
+            console.error('⚠️ Terrain-based coverage failed:', error);
+            this.showLoading(false);
+            alert('⚠️ Terrain-based coverage calculation failed.\nUsing simple circular coverage instead.\n\nThis could be due to:\n• Network connectivity issues\n• Elevation data service unavailable\n• Processing timeout');
+        }
     }
 
     removeCoverageCircle(id) {
@@ -400,46 +522,12 @@ class LoRaMeshPlanner {
     }
 
     async calculateRFLink(tx1, tx2, id1, id2) {
-        try {
-            const response = await fetch('/api/linkbudget', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    lat1: tx1.latlng.lat,
-                    lng1: tx1.latlng.lng,
-                    lat2: tx2.latlng.lat,
-                    lng2: tx2.latlng.lng,
-                    txPower: tx1.power,
-                    rxPower: tx2.power
-                })
-            });
-            
-            if (!response.ok) {
-                throw new Error(`API responded with ${response.status}`);
-            }
-            
-            const result = await response.json();
-            
-            if (result.success && result.linkBudget) {
-                const quality = result.linkBudget.quality;
-                this.drawLinkLine(id1, id2, quality, result.linkBudget);
-            } else {
-                console.warn('Invalid RF calculation result:', result);
-                // Fallback to distance-based estimation
-                const distance = this.calculateDistance(tx1.latlng, tx2.latlng);
-                const quality = this.estimateLinkQuality(distance, tx1.power, tx2.power);
-                this.drawLinkLine(id1, id2, quality);
-            }
-            
-        } catch (error) {
-            console.error('RF calculation error:', error);
-            // Fallback to distance-based estimation
-            const distance = this.calculateDistance(tx1.latlng, tx2.latlng);
-            const quality = this.estimateLinkQuality(distance, tx1.power, tx2.power);
-            this.drawLinkLine(id1, id2, quality);
-        }
+        console.log('Using simple distance-based link calculation (API disabled for now)');
+        
+        // Use simple distance-based calculation for now
+        const distance = this.calculateDistance(tx1.latlng, tx2.latlng);
+        const quality = this.estimateLinkQuality(distance, tx1.power, tx2.power);
+        this.drawLinkLine(id1, id2, quality);
     }
     
     showLoading(show) {
@@ -448,6 +536,17 @@ class LoRaMeshPlanner {
             overlay.classList.remove('hidden');
         } else {
             overlay.classList.add('hidden');
+        }
+    }
+    
+    updateModelingStatus() {
+        const statusElement = document.getElementById('modelingStatus');
+        if (this.terrainModeling) {
+            statusElement.textContent = '🏔️ Using advanced terrain modeling';
+            statusElement.style.color = '#dc2626';
+        } else {
+            statusElement.textContent = '⭕ Using fast circular coverage';
+            statusElement.style.color = '#6b7280';
         }
     }
 

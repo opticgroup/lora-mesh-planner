@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoRa Mesh Network Planner</title>
+    <title>K7CFO : Lora Repeater Planner</title>
     <meta name="description" content="Plan and visualize LoRa mesh networks with terrain-based RF coverage modeling">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
@@ -13,16 +14,14 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="./styles/main.css">
     
-    <!-- PWA Meta -->
-    <link rel="manifest" href="/manifest.json">
+    <!-- Theme color -->
     <meta name="theme-color" content="#2563eb">
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
 </head>
 <body>
     <div id="app">
         <!-- Header -->
         <header class="app-header">
-            <h1>🔗 LoRa Mesh Planner</h1>
+            <h1>📡 K7CFO : Lora Repeater Planner</h1>
             <div class="header-controls">
                 <div class="power-selector">
                     <label>Power:</label>
@@ -55,10 +54,16 @@
                     <label>
                         <input type="checkbox" id="showCoverage"> Show Coverage Areas
                     </label>
+                    <label>
+                        <input type="checkbox" id="terrainModeling"> 🏔️ Advanced Terrain Modeling
+                    </label>
                     <div class="slider-container">
                         <label>Transparency:</label>
                         <input type="range" id="transparencySlider" min="0" max="100" value="30">
                         <span id="transparencyValue">30%</span>
+                    </div>
+                    <div class="modeling-info">
+                        <small id="modelingStatus">Using fast circular coverage</small>
                     </div>
                 </div>
             </div>
