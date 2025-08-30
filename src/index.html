@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoRa Mesh Network Planner</title>
+    <meta name="description" content="Plan and visualize LoRa mesh networks with terrain-based RF coverage modeling">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./styles/main.css">
+    
+    <!-- PWA Meta -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <h1>🔗 LoRa Mesh Planner</h1>
+            <div class="header-controls">
+                <div class="power-selector">
+                    <label>Power:</label>
+                    <select id="powerSelect">
+                        <option value="0.15">0.15W</option>
+                        <option value="1.0" selected>1.0W</option>
+                    </select>
+                </div>
+                <button id="clearButton" class="btn-clear">🗑️ Clear All</button>
+            </div>
+        </header>
+
+        <!-- Map Container -->
+        <div id="map" class="map-container"></div>
+
+        <!-- Controls Sidebar -->
+        <div class="controls-panel">
+            <div class="panel-section">
+                <h3>Map Layers</h3>
+                <div class="layer-controls">
+                    <label><input type="radio" name="mapLayer" value="street" checked> 🗺️ Street</label>
+                    <label><input type="radio" name="mapLayer" value="satellite"> 🛰️ Satellite</label>
+                    <label><input type="radio" name="mapLayer" value="topo"> 🏔️ Topographic</label>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>Coverage Display</h3>
+                <div class="coverage-controls">
+                    <label>
+                        <input type="checkbox" id="showCoverage"> Show Coverage Areas
+                    </label>
+                    <div class="slider-container">
+                        <label>Transparency:</label>
+                        <input type="range" id="transparencySlider" min="0" max="100" value="30">
+                        <span id="transparencyValue">30%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>Network Status</h3>
+                <div id="networkStats">
+                    <p>Transmitters: <span id="txCount">0</span></p>
+                    <p>Links: <span id="linkCount">0</span></p>
+                    <div class="legend">
+                        <div class="legend-item"><span class="color-good"></span> Good Link (&ge;20dB)</div>
+                        <div class="legend-item"><span class="color-marginal"></span> Marginal (10-20dB)</div>
+                        <div class="legend-item"><span class="color-poor"></span> Poor (&lt;10dB)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p>Calculating RF Links...</p>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Main Application -->
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>

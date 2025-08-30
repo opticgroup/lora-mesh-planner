@@ -1,0 +1,28 @@
+{
+  "name": "lora-mesh-planner",
+  "version": "1.0.0",
+  "description": "LoRa Mesh Network Coverage Planning Tool",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .js,.html --report-unused-disable-directives --max-warnings 0",
+    "format": "prettier --write .",
+    "test": "vitest"
+  },
+  "keywords": ["lora", "mesh", "rf", "coverage", "planning", "915mhz"],
+  "author": "Nick",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.0.0",
+    "vitest": "^1.0.0",
+    "@eslint/js": "^9.0.0"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "leaflet-draw": "^1.0.4"
+  }
+}

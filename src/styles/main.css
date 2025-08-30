@@ -1,0 +1,288 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+    background: #f5f5f5;
+}
+
+/* App Layout */
+#app {
+    display: grid;
+    grid-template-areas:
+        "header header"
+        "map controls";
+    grid-template-rows: 60px 1fr;
+    grid-template-columns: 1fr 280px;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Header */
+.app-header {
+    grid-area: header;
+    background: #2563eb;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.app-header h1 {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.power-selector label {
+    margin-right: 8px;
+    font-weight: 500;
+}
+
+.power-selector select {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    background: white;
+    color: #333;
+}
+
+.btn-clear {
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background-color 0.2s;
+}
+
+.btn-clear:hover {
+    background: #b91c1c;
+}
+
+/* Map Container */
+.map-container {
+    grid-area: map;
+    position: relative;
+    z-index: 1;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Controls Panel */
+.controls-panel {
+    grid-area: controls;
+    background: white;
+    border-left: 1px solid #e5e7eb;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+.panel-section {
+    margin-bottom: 20px;
+}
+
+.panel-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #374151;
+    border-bottom: 2px solid #2563eb;
+    padding-bottom: 5px;
+}
+
+/* Layer Controls */
+.layer-controls label {
+    display: block;
+    margin-bottom: 8px;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.layer-controls input[type="radio"] {
+    margin-right: 8px;
+}
+
+/* Coverage Controls */
+.coverage-controls label {
+    display: block;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.slider-container {
+    margin-top: 10px;
+}
+
+.slider-container label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.slider-container input[type="range"] {
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+#transparencyValue {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Network Stats */
+#networkStats p {
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.legend {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 12px;
+}
+
+.color-good,
+.color-marginal,
+.color-poor {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 8px;
+    border-radius: 2px;
+}
+
+.color-good { background: #10b981; }
+.color-marginal { background: #f59e0b; }
+.color-poor { background: #ef4444; }
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    color: white;
+}
+
+.loading-overlay.hidden {
+    display: none;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #374151;
+    border-top: 4px solid #2563eb;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Custom Leaflet Styles */
+.leaflet-popup-content {
+    margin: 8px 12px;
+    font-size: 13px;
+}
+
+.transmitter-popup {
+    min-width: 150px;
+}
+
+.transmitter-popup h4 {
+    margin-bottom: 8px;
+    color: #374151;
+}
+
+.transmitter-popup .power-info {
+    font-weight: 500;
+    color: #2563eb;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #app {
+        grid-template-areas:
+            "header"
+            "map"
+            "controls";
+        grid-template-rows: 60px 1fr auto;
+        grid-template-columns: 1fr;
+    }
+
+    .controls-panel {
+        max-height: 200px;
+        border-left: none;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .header-controls {
+        gap: 10px;
+    }
+
+    .app-header h1 {
+        font-size: 16px;
+    }
+
+    .btn-clear {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .app-header {
+        padding: 0 10px;
+    }
+
+    .header-controls {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .controls-panel {
+        padding: 10px;
+    }
+
+    .panel-section {
+        margin-bottom: 15px;
+    }
+}
