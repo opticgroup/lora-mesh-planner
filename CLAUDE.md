@@ -59,6 +59,37 @@ The application uses a Map-based architecture:
 4. RF calculations performed server-side using elevation profiles
 5. Results displayed as colored links and coverage areas
 
+## Complete Development Workflow
+
+**Your Automated Pipeline is now LIVE! 🚀**
+
+### How It Works
+1. **Tell Claude Code what to build** → I make the changes
+2. **Git automatically tracks** → All changes committed with descriptive messages
+3. **GitHub receives updates** → Code automatically pushed to https://github.com/opticgroup/lora-mesh-planner
+4. **Vercel auto-deploys** → Live website updates within 30 seconds
+
+### Your Live Website
+- **Production URL**: https://lora-mesh-planner-fzs90ii3f-asknick-ytelcoms-projects.vercel.app
+- **Auto-deploys**: Every push to GitHub main branch triggers automatic deployment
+- **No manual steps**: Just tell me what to change and reload your website to see it live!
+
+### Your Workflow
+```
+You: "Add a blue button to the map"
+↓
+Claude Code: Makes changes + commits + pushes
+↓ 
+Vercel: Auto-deploys (30 seconds)
+↓
+You: Reload website to see changes live
+```
+
+### GitHub Integration
+- **Repository**: https://github.com/opticgroup/lora-mesh-planner
+- **Automatic**: All changes pushed to main branch
+- **History**: Full git history with descriptive commit messages
+
 ## Development Notes
 
 - No build step required for development - Vite handles hot reloading
