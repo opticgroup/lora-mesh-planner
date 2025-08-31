@@ -2,14 +2,24 @@
   "name": "lora-mesh-planner",
   "version": "1.0.0",
   "description": "LoRa Mesh Network Coverage Planning Tool",
-  "main": "index.js",
+  "main": "dist/index.html",
+  "files": [
+    "dist/**/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nickprock/lora-mesh-planner.git"
+  },
+  "homepage": "https://nickprock.github.io/lora-mesh-planner",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .js,.html --report-unused-disable-directives --max-warnings 0",
     "format": "prettier --write .",
-    "test": "vitest"
+    "test": "vitest",
+    "prepublishOnly": "npm run build",
+    "deploy": "npm publish"
   },
   "keywords": [
     "lora",
