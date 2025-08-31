@@ -5,7 +5,7 @@ class LoRaMeshPlanner {
         this.transmitters = new Map(); // Store transmitter data
         this.linkLines = new Map(); // Store link polylines
         this.coverageCircles = new Map(); // Store coverage areas
-        this.currentPower = 1.0; // Default 1W
+        this.currentPower = 0.15; // Default 0.15W
         this.showCoverage = false;
         this.coverageOpacity = 0.3;
         this.terrainModeling = false;
@@ -608,7 +608,7 @@ class LoRaMeshPlanner {
             
             // Restore settings
             if (data.settings) {
-                this.currentPower = data.settings.currentPower || 1.0;
+                this.currentPower = data.settings.currentPower || 0.15;
                 this.showCoverage = data.settings.showCoverage || false;
                 this.coverageOpacity = data.settings.coverageOpacity || 0.3;
                 
