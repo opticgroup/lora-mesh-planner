@@ -12,33 +12,77 @@ const rfCalc = new RFCalculator();
  * @param {number} maxRange - Maximum range to check in km (default 30)
  * @returns {Object} Coverage polygon data
  */
-async function generateCoveragePolygon(lat, lng, power, resolution = 10, maxRange = 30) {
+async function generateCoveragePolygon(lat, lng, power, resolution = 15, maxRange = 25) {
     const coveragePoints = [];
     const angles = [];
     
-    console.log(`Generating coverage polygon for ${lat}, ${lng} at ${power}W with ${resolution}° resolution`);
+    console.log(`🔄 Generating enhanced coverage for ${lat}, ${lng} at ${power}W with ${resolution}° resolution`);
     
-    // Generate angles around the transmitter with higher resolution
-    for (let angle = 0; angle < 360; angle += resolution) {
+    // Optimize resolution based on power - higher power needs more detail
+    const optimizedResolution = power >= 1.0 ? Math.max(resolution, 12) : Math.max(resolution, 20);
+    const optimizedMaxRange = power >= 1.0 ? Math.min(maxRange, 20) : Math.min(maxRange, 12);
+    
+    // Generate angles around the transmitter
+    for (let angle = 0; angle < 360; angle += optimizedResolution) {
         angles.push(angle);
     }
     
-    // Calculate coverage in each direction with batching to avoid overwhelming the elevation API
-    const batchSize = 8; // Process 8 directions at a time
+    // Enhanced batching with intelligent load balancing
+    const startTime = Date.now();
+    const maxProcessingTime = 8000; // 8 second limit for Vercel
+    const batchSize = 6; // Smaller batches for better reliability
     const results = [];
     
+    console.log(`📊 Processing ${angles.length} rays in batches of ${batchSize}`);
+    
     for (let i = 0; i < angles.length; i += batchSize) {
+        // Check if we're running out of time
+        if (Date.now() - startTime > maxProcessingTime) {
+            console.warn(`⏰ Processing timeout reached, using fallback for remaining ${angles.length - i} rays`);
+            // Fill remaining angles with estimated coverage
+            for (let j = i; j < angles.length; j++) {
+                const estimatedRange = rfCalc.estimateCoverageRadius(power, 'rolling') / 1000; // Convert to km
+                const point = calculateDestination(lat, lng, angles[j], estimatedRange);
+                results.push({
+                    lat: point.lat,
+                    lng: point.lng,
+                    coverageDistance: estimatedRange,
+                    linkMargin: 12 // Conservative estimate
+                });
+            }
+            break;
+        }
+        
         const batch = angles.slice(i, i + batchSize);
         const batchPromises = batch.map(async (angle) => {
-            return await calculateCoverageInDirection(lat, lng, power, angle, maxRange);
+            return await calculateCoverageInDirection(lat, lng, power, angle, optimizedMaxRange);
         });
         
-        const batchResults = await Promise.all(batchPromises);
-        results.push(...batchResults);
-        
-        // Small delay between batches to be respectful to the elevation API
-        if (i + batchSize < angles.length) {
-            await new Promise(resolve => setTimeout(resolve, 100));
+        try {
+            const batchResults = await Promise.all(batchPromises);
+            results.push(...batchResults);
+            
+            // Adaptive delay - longer delay if we're processing slowly
+            const elapsedTime = Date.now() - startTime;
+            const avgTimePerBatch = elapsedTime / ((i / batchSize) + 1);
+            const delay = avgTimePerBatch > 800 ? 50 : 25; // Reduce delay if processing fast
+            
+            if (i + batchSize < angles.length) {
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        } catch (error) {
+            console.warn(`⚠️ Batch processing error at batch ${i/batchSize + 1}:`, error.message);
+            // Use fallback for failed batch
+            for (let j = 0; j < batch.length; j++) {
+                const estimatedRange = rfCalc.estimateCoverageRadius(power, 'rolling') / 1000;
+                const point = calculateDestination(lat, lng, batch[j], estimatedRange);
+                results.push({
+                    lat: point.lat,
+                    lng: point.lng,
+                    coverageDistance: estimatedRange,
+                    linkMargin: 10
+                });
+            }
         }
     }
     
@@ -101,11 +145,20 @@ async function calculateCoverageInDirection(txLat, txLng, power, bearing, maxRan
         const point = calculateDestination(txLat, txLng, bearing, distance);
         
         try {
-            // Get elevation profile for this ray
-            const elevationResponse = await fetch(
-                `${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/elevation?` +
-                `lat1=${txLat}&lng1=${txLng}&lat2=${point.lat}&lng2=${point.lng}&samples=20`
-            );
+            // Get elevation profile for this ray with error handling and timeout
+            const elevationUrl = `${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/elevation?` +
+                `lat1=${txLat}&lng1=${txLng}&lat2=${point.lat}&lng2=${point.lng}&samples=15`;
+            
+            const elevationResponse = await Promise.race([
+                fetch(elevationUrl, { 
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    timeout: 3000 // 3 second timeout
+                }),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Elevation API timeout')), 3000)
+                )
+            ]);
             
             let elevationProfile = [];
             if (elevationResponse.ok) {
