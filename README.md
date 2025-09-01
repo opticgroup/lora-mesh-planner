@@ -1,56 +1,49 @@
 # LoRa Mesh Network Planner
 
-A web-based tool for planning and visualizing LoRa mesh networks with terrain-based RF coverage modeling at 915 MHz.
+📡 **K7CFO : LoRa Repeater Planner** - A web-based tool for planning and visualizing LoRa mesh networks at 915 MHz.
 
-![LoRa Mesh Planner](https://img.shields.io/badge/frequency-915%20MHz-blue) ![Status](https://img.shields.io/badge/status-ready%20for%20deployment-green) ![License](https://img.shields.io/badge/license-MIT-blue)
+![LoRa Mesh Planner](https://img.shields.io/badge/frequency-915%20MHz-blue) ![Status](https://img.shields.io/badge/status-stable-green) ![License](https://img.shields.io/badge/license-MIT-blue)
 
-## Features
+## ✨ Features
 
-✅ **Interactive Map Interface**
-- 🛰️ Satellite imagery via Esri World Imagery  
-- 🗺️ Street maps via OpenStreetMap
-- 🏔️ Topographic maps via OpenTopoMap
-- No API keys required!
+### 🗺️ Interactive Map Interface
+- **Multiple Map Layers**: Street, Satellite, and Topographic views
+- **No API Keys Required**: Uses free tile services (OpenStreetMap, Esri, OpenTopoMap)
+- **Responsive Design**: Works on desktop and mobile devices
+- **PWA Ready**: Installable as a Progressive Web App
 
-✅ **Transmitter Management**
-- Click to place transmitters
-- Drag to reposition
-- Right-click context menus
-- Power selection: 0.15W or 1W
-- Persistent storage
+### 📡 Transmitter Management
+- **Click to Place**: Simple transmitter placement anywhere on the map
+- **Drag to Reposition**: Easy marker repositioning
+- **Power Selection**: Choose between 0.15W (150mW) or 1.0W
+- **Context Menus**: Right-click for delete, rename, and power toggle options
+- **Persistent Storage**: Automatically saves your network configuration
 
-✅ **Real-time RF Analysis**
-- Terrain-based line-of-sight calculations
-- Fresnel zone clearance analysis
-- Free space path loss modeling
-- Link quality visualization (green/yellow/red)
+### 🔗 Advanced RF Link Analysis
+- **Real-time Visualization**: Comprehensive link quality assessment
+- **Terrain-Aware Calculations**: Real elevation data integration
+- **Fresnel Zone Analysis**: First zone clearance at 915 MHz
+- **Path Loss Modeling**: Free space + diffraction + environmental
+- **Color-coded Quality**:
+  - 🟢 **Excellent**: >15 dB margin, ideal conditions
+  - 🟡 **Good**: 5-15 dB margin, reliable operation  
+  - 🟠 **Marginal**: 0-5 dB margin, may have issues
+  - 🔴 **Poor**: <0 dB margin, unreliable connection
+- **Detailed Popups**: Click links for comprehensive RF analysis
+- **Obstruction Detection**: Visual indicators for terrain blockage
 
-✅ **Coverage Visualization**
-- Coverage area circles
-- Adjustable transparency
-- Power-based radius estimation
+### 📶 Coverage Visualization
+- **Coverage Circles**: Power-based radius estimation
+- **Adjustable Transparency**: Customize overlay opacity
+- **Toggle Display**: Show/hide coverage areas as needed
 
-✅ **Progressive Web App**
-- Works offline after first load
-- Mobile-responsive design
-- Installable as PWA
-
-## Technical Specifications
-
-- **Frequency**: 915 MHz (ISM band)
-- **RF Model**: Line-of-sight with Fresnel zone clearance
-- **Antenna**: 5dBi omnidirectional, 6 feet AGL
-- **Power Options**: 0.15W (150mW) or 1W
-- **Receiver Sensitivity**: -137 dBm (typical LoRa)
-- **Terrain Data**: OpenTopography API (free, global coverage)
-
-## Quick Start
+## 🚀 Quick Start
 
 ### Development
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/opticgroup/lora-mesh-planner.git
 cd lora-mesh-planner
 
 # Install dependencies
@@ -59,141 +52,201 @@ npm install
 # Start development server
 npm run dev
 
-# Visit http://localhost:3000
+# Open http://localhost:3000 in your browser
 ```
 
-### Deployment (Vercel)
+### Production Deployment
 
 ```bash
 # Build for production
 npm run build
 
-# Deploy to Vercel
+# Deploy to Vercel (recommended)
 npx vercel --prod
 
-# Or connect your GitHub repo to Vercel for automatic deployments
+# Or deploy to any static hosting service
 ```
 
-## Usage
+## 📱 Usage Guide
 
-### Basic Operation
+### Basic Operations
 
-1. **Add Transmitters**: Click anywhere on the map
-2. **Select Power**: Choose 0.15W or 1W from the dropdown
-3. **Move Transmitters**: Drag markers to new positions
-4. **View Links**: Colored lines show link quality:
-   - 🟢 **Green**: Good link (≥20 dB margin)
-   - 🟡 **Yellow**: Marginal (10-20 dB margin)  
-   - 🔴 **Red**: Poor (<10 dB margin)
+1. **Adding Transmitters**
+   - Click anywhere on the map to place a transmitter
+   - Select power level (0.15W or 1.0W) before or after placement
+   - Markers show different colors/sizes based on power level
 
-### Advanced Features
+2. **Managing Transmitters**
+   - **Drag markers** to reposition transmitters
+   - **Right-click markers** for context menu options:
+     - Delete transmitter
+     - Toggle power (0.15W ↔ 1.0W)
+     - Rename transmitter
 
-- **Map Layers**: Switch between satellite, street, and topographic views
-- **Coverage Areas**: Toggle coverage circles with transparency control
-- **Context Menu**: Right-click transmitters to delete, rename, or change power
-- **Clear All**: Reset the entire network planning session
+3. **Viewing Network Links**
+   - Links automatically appear between all transmitters
+   - Colors indicate estimated link quality
+   - Link count shown in Network Status panel
 
-## RF Model Details
+4. **Coverage Areas**
+   - Toggle "Show Coverage Areas" to display range circles
+   - Adjust transparency slider for better visibility
+   - Coverage radius based on power level and simple propagation model
 
-The tool uses a simplified but effective RF propagation model:
+### Map Controls
 
-### Path Loss Calculation
+- **Layer Selection**: Choose between Street, Satellite, or Topographic maps
+- **Zoom**: Mouse wheel or map controls
+- **Pan**: Click and drag the map
+- **Scale Bar**: Shows distance reference
+
+### Settings Panel
+
+- **Power Selection**: Default power for new transmitters
+- **Coverage Display**: Toggle and transparency controls
+- **Network Status**: Live count of transmitters and links
+- **Clear All**: Reset entire network (with confirmation)
+
+## ⚙️ Technical Specifications
+
+### RF Parameters
+- **Frequency**: 915 MHz (ISM band, λ = 0.328m)
+- **Antenna**: 3 dBi omnidirectional, 10m AGL (configurable)
+- **Power Options**: 0.15W (21.76 dBm) or 1.0W (30 dBm)
+- **Receiver Sensitivity**: SF7: -123 dBm to SF12: -137 dBm
+- **Modulation**: LoRa with spreading factor optimization
+- **Fade Margin**: 15 dB for reliability
+
+### Advanced RF Analysis Engine
+The tool implements professional-grade RF calculations:
+
+```javascript
+// Free Space Path Loss (ITU-R P.525-3)
+FSPL(dB) = 20×log₁₀(d_km) + 20×log₁₀(f_MHz) + 32.44
+
+// Fresnel Zone Radius (915 MHz)
+r = √(n × λ × d₁ × d₂ / (d₁ + d₂))
+
+// Complete Link Budget
+Margin = EIRP - PathLoss + RxGain - Sensitivity - FadeMargin
+
+// Terrain Integration
+- Real elevation data from Open-Meteo & OpenTopoData
+- Knife-edge diffraction modeling
+- Earth curvature correction
+- Obstruction detection and clearance analysis
 ```
-PathLoss(dB) = 20×log₁₀(4π×d×f/c)
-```
-Where:
-- d = distance in meters
-- f = frequency (915 MHz)
-- c = speed of light
 
-### Fresnel Zone Analysis
-- Calculates first Fresnel zone radius
-- Accounts for terrain obstruction
-- Applies Earth curvature corrections
-- Requires 60% clearance for optimal links
+### Data Storage
+- **Local Storage**: Network configurations saved automatically
+- **No Server Required**: Fully client-side operation
+- **Export/Import**: Manual backup via browser localStorage
 
-### Link Budget
-```
-RxPower = TxPower + TxGain + RxGain - PathLoss - ObstructionLoss
-LinkMargin = RxPower - RxSensitivity
-```
-
-## API Endpoints
-
-### GET/POST `/api/elevation`
-Returns elevation profile between two points.
-
-**Parameters:**
-- `lat1`, `lng1`: Start coordinates
-- `lat2`, `lng2`: End coordinates  
-- `samples`: Number of elevation points (2-200)
-
-### GET/POST `/api/linkbudget`
-Calculates RF link budget with terrain analysis.
-
-**Parameters:**
-- `lat1`, `lng1`: Transmitter 1 coordinates
-- `lat2`, `lng2`: Transmitter 2 coordinates
-- `txPower`: Transmit power in watts
-- `rxPower`: Receive power in watts (optional)
-
-## Project Structure
+## 🏗️ Project Structure
 
 ```
 lora-mesh-planner/
-├── src/                    # Frontend source
-│   ├── index.html          # Main HTML page
-│   ├── js/main.js          # Application logic
-│   └── styles/main.css     # Styling
-├── api/                    # Vercel serverless functions
-│   ├── elevation.js        # Terrain data API
-│   ├── linkbudget.js       # RF calculations API
-│   └── rf-utils.js         # RF calculation utilities
-├── public/                 # Static assets
+├── 📁 src/
+│   ├── index.html          # Main application page
+│   ├── 📁 js/
+│   │   └── main.js         # Core application logic
+│   └── 📁 styles/
+│       └── main.css        # Application styling
+├── 📁 public/
 │   ├── manifest.json       # PWA manifest
-│   └── icons/              # App icons
-└── dist/                   # Built application
+│   └── favicon.svg         # App icon
+├── 📁 api/                 # (Optional) Advanced RF APIs
+│   ├── elevation.js        # Terrain data service
+│   ├── linkbudget.js       # Detailed RF calculations
+│   └── rf-utils.js         # RF calculation utilities
+├── package.json            # Dependencies and scripts
+├── vite.config.js          # Build configuration
+└── vercel.json            # Deployment settings
 ```
 
-## Development Roadmap
+## 🛠️ Development
 
-### Phase 1 ✅ Complete
-- [x] Basic mapping interface
-- [x] Transmitter placement and management
-- [x] RF calculation engine
-- [x] Real-time link visualization
-- [x] Coverage area display
-- [x] Vercel deployment ready
+### Available Scripts
 
-### Phase 2 🚧 Future Enhancements
-- [ ] Import/export network configurations
-- [ ] Multiple frequency support
-- [ ] Advanced antenna patterns
-- [ ] Network topology optimization
-- [ ] Coverage heatmaps
-- [ ] Terrain profile visualization
-- [ ] Link budget details panel
+```bash
+npm run dev      # Start development server (localhost:3000)
+npm run build    # Build for production
+npm run preview  # Preview production build
+npm run lint     # Run ESLint
+npm run format   # Format code with Prettier
+npm run test     # Run tests
+```
 
-## Contributing
+### Development Workflow
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+1. **Local Development**
+   - Make changes to source files
+   - Development server auto-reloads
+   - Test functionality at `http://localhost:3000`
 
-## License
+2. **Production Deployment**
+   - Run `npm run build` to create optimized build
+   - Deploy `dist/` folder to any static hosting
+   - Recommended: Use Vercel for automatic deployments
 
-MIT License - feel free to use for personal or commercial projects.
+### Architecture Notes
 
-## Credits
+- **Frontend Framework**: Vanilla JavaScript + Leaflet.js
+- **Build Tool**: Vite (fast, modern bundler)
+- **Mapping**: Leaflet.js with multiple tile providers
+- **Styling**: Custom CSS with responsive design
+- **State Management**: Simple class-based architecture
+- **Storage**: Browser localStorage for persistence
 
-- **Maps**: OpenStreetMap, Esri, OpenTopoMap
-- **Elevation Data**: OpenTopography API
-- **Icons**: Built-in emoji and Unicode symbols
+## 🌍 Browser Support
+
+- **Chrome**: ✅ Full support (recommended)
+- **Firefox**: ✅ Full support
+- **Safari**: ✅ Full support
+- **Edge**: ✅ Full support
+- **Mobile Browsers**: ✅ Responsive design
+
+## 🤝 Contributing
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### Development Guidelines
+
+- Keep the UI/UX simple and intuitive
+- Ensure mobile responsiveness
+- Test on multiple browsers
+- Follow existing code style
+- Add comments for complex logic
+
+## 📄 License
+
+MIT License - See [LICENSE](LICENSE) file for details.
+
+## 🙏 Credits & Acknowledgments
+
+### Map Data & Services
+- **[OpenStreetMap](https://www.openstreetmap.org/)** - Street map tiles
+- **[Esri](https://www.esri.com/)** - Satellite imagery
+- **[OpenTopoMap](https://opentopomap.org/)** - Topographic maps
+
+### Libraries & Tools
+- **[Leaflet.js](https://leafletjs.com/)** - Interactive mapping library
+- **[Vite](https://vitejs.dev/)** - Build tool and development server
+- **[Vercel](https://vercel.com/)** - Hosting and deployment platform
+
+### LoRa Community
+Built with ❤️ for the **LoRa/IoT community**. Special thanks to amateur radio operators and IoT enthusiasts who make mesh networking possible!
 
 ---
 
-**Built for the LoRa/IoT community** 📡 
+## 🔗 Links
 
-Happy mesh networking! 🔗
+- **Live Demo**: [Coming Soon]
+- **Issues**: [GitHub Issues](https://github.com/opticgroup/lora-mesh-planner/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/opticgroup/lora-mesh-planner/discussions)
+
+**📡 Happy mesh networking! 🔗**

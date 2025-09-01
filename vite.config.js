@@ -1,22 +1,30 @@
 import { defineConfig } from 'vite'
 
-export default defineConfig({
-  root: 'src',
-  publicDir: '../public',
-  build: {
-    outDir: '../dist',
-    emptyOutDir: true,
-    rollupOptions: {
-      input: {
-        main: 'src/index.html'
+export default defineConfig(({ command }) => {
+  const config = {
+    root: 'src',
+    publicDir: '../public',
+    build: {
+      outDir: '../dist',
+      emptyOutDir: true,
+      rollupOptions: {
+        input: {
+          main: 'src/index.html'
+        }
       }
+    },
+    server: {
+      port: 3000,
+      open: true
+    },
+    preview: {
+      port: 8080
     }
-  },
-  server: {
-    port: 3000,
-    open: true
-  },
-  preview: {
-    port: 8080
   }
+
+  if (command === 'build') {
+    config.base = '/lora-mesh-planner/'
+  }
+
+  return config
 })

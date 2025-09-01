@@ -1,16 +1,16 @@
 {
   "name": "lora-mesh-planner",
   "version": "1.0.0",
-  "description": "LoRa Mesh Network Coverage Planning Tool",
+  "description": "K7CFO : LoRa Repeater Planner - Simple, fast LoRa mesh network coverage planning tool",
   "main": "dist/index.html",
   "files": [
     "dist/**/*"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nickprock/lora-mesh-planner.git"
+    "url": "git+https://github.com/opticgroup/lora-mesh-planner.git"
   },
-  "homepage": "https://nickprock.github.io/lora-mesh-planner",
+  "homepage": "https://opticgroup.github.io/lora-mesh-planner/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -39,8 +39,6 @@
     "vitest": "^1.0.0"
   },
   "dependencies": {
-    "express": "^5.1.0",
-    "leaflet": "^1.9.4",
-    "leaflet-draw": "^1.0.4"
+    "leaflet": "^1.9.4"
   }
 }

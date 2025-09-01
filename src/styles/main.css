@@ -204,7 +204,99 @@ label:has(#terrainModeling:checked) {
 .color-marginal { background: #f59e0b; }
 .color-poor { background: #ef4444; }
 
-/* Loading Overlay */
+/* Enhanced link popup styles */
+.link-popup {
+    max-width: 300px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.link-popup h4 {
+    margin: 0 0 10px 0;
+    color: #1f2937;
+    font-size: 16px;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 5px;
+}
+
+.link-stats table {
+    width: 100%;
+    font-size: 12px;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+}
+
+.link-stats td {
+    padding: 2px 5px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.link-stats td:first-child {
+    width: 60%;
+    color: #6b7280;
+}
+
+.link-stats td:last-child {
+    text-align: right;
+    font-weight: 600;
+    color: #111827;
+}
+
+.obstacle-warning {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    padding: 8px;
+    border-radius: 4px;
+    margin: 8px 0;
+    font-size: 11px;
+    color: #92400e;
+}
+
+.recommendations {
+    background: #f0f9ff;
+    border: 1px solid #0ea5e9;
+    padding: 8px;
+    border-radius: 4px;
+    margin: 8px 0;
+    font-size: 11px;
+    color: #075985;
+}
+
+.link-path {
+    margin-top: 8px;
+    padding-top: 5px;
+    border-top: 1px solid #e5e7eb;
+    color: #6b7280;
+    font-size: 10px;
+}
+
+/* Transmitter popup improvements */
+.transmitter-popup {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.transmitter-popup h4 {
+    margin: 0 0 8px 0;
+    color: #1f2937;
+    font-size: 16px;
+}
+
+.transmitter-popup .power-info {
+    font-weight: 600;
+    color: #059669;
+    margin: 5px 0;
+}
+
+.coverage-popup {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.coverage-popup h4 {
+    margin: 0 0 8px 0;
+    color: #1f2937;
+    font-size: 16px;
+}
+
+/* Loading overlay styles */
 .loading-overlay {
     position: fixed;
     top: 0;

@@ -1,4 +1,6 @@
 // LoRa Mesh Network Planner - Main Application
+import { linkBudgetCalculator } from './rf/link-budget.js';
+
 class LoRaMeshPlanner {
     constructor() {
         this.map = null;
@@ -8,7 +10,6 @@ class LoRaMeshPlanner {
         this.currentPower = 0.15; // Default 0.15W
         this.showCoverage = false;
         this.coverageOpacity = 0.3;
-        this.terrainModeling = false;
         
         // Map layer definitions
         this.mapLayers = {
@@ -32,7 +33,7 @@ class LoRaMeshPlanner {
     init() {
         this.initMap();
         this.bindEvents();
-        this.updateModelingStatus(); // Initialize status display
+        this.initPowerDropdown();
         this.loadFromStorage();
     }
 
@@ -62,6 +63,15 @@ class LoRaMeshPlanner {
         this.map.on('click', (e) => this.addTransmitter(e.latlng));
     }
 
+    initPowerDropdown() {
+        // Ensure the power dropdown shows the default value
+        const powerSelect = document.getElementById('powerSelect');
+        if (powerSelect) {
+            powerSelect.value = this.currentPower;
+            console.log(`Power dropdown initialized to ${this.currentPower}W`);
+        }
+    }
+
     bindEvents() {
         // Layer switching
         document.querySelectorAll('input[name="mapLayer"]').forEach(radio => {
@@ -85,18 +95,6 @@ class LoRaMeshPlanner {
         document.getElementById('showCoverage').addEventListener('change', (e) => {
             this.showCoverage = e.target.checked;
             this.toggleCoverage();
-        });
-        
-        // Terrain modeling toggle
-        document.getElementById('terrainModeling').addEventListener('change', (e) => {
-            this.terrainModeling = e.target.checked;
-            this.updateModelingStatus();
-            
-            // Re-generate all coverage if currently showing
-            if (this.showCoverage) {
-                this.hideAllCoverage();
-                this.showAllCoverage();
-            }
         });
         
         // Transparency slider
@@ -262,29 +260,40 @@ class LoRaMeshPlanner {
         // Remove existing links for this transmitter
         this.removeLinkLines(transmitterId);
         
-        // Show loading overlay
+        // Show loading indicator
         this.showLoading(true);
         
         try {
-            // Calculate links to all other transmitters using RF API
+            // Calculate links to all other transmitters using advanced RF analysis
             const linkPromises = [];
+            
             for (const [otherId, otherTransmitter] of this.transmitters) {
                 if (otherId === transmitterId) continue;
                 
-                linkPromises.push(this.calculateRFLink(transmitter, otherTransmitter, transmitterId, otherId));
+                // Create link calculation promise
+                const linkPromise = this.calculateAdvancedLink(
+                    transmitter, 
+                    otherTransmitter, 
+                    transmitterId, 
+                    otherId
+                );
+                linkPromises.push(linkPromise);
             }
             
+            // Wait for all link calculations to complete
             await Promise.all(linkPromises);
+            
         } catch (error) {
-            console.error('Error calculating RF links:', error);
-            // Fallback to simple distance-based calculation
+            console.error('Error calculating advanced links:', error);
+            
+            // Fallback to simple calculation
             for (const [otherId, otherTransmitter] of this.transmitters) {
                 if (otherId === transmitterId) continue;
                 
                 const distance = this.calculateDistance(transmitter.latlng, otherTransmitter.latlng);
                 const linkQuality = this.estimateLinkQuality(distance, transmitter.power, otherTransmitter.power);
                 
-                this.drawLinkLine(transmitterId, otherId, linkQuality);
+                this.drawLinkLine(transmitterId, otherId, linkQuality, null, true); // fallback flag
             }
         }
         
@@ -306,14 +315,156 @@ class LoRaMeshPlanner {
         return R * c;
     }
 
+    /**
+     * Calculate advanced RF link between two transmitters
+     * Uses comprehensive link budget analysis with terrain data
+     */
+    async calculateAdvancedLink(tx1, tx2, id1, id2) {
+        try {
+            // Perform comprehensive link budget calculation
+            const txPoint = { lat: tx1.latlng.lat, lng: tx1.latlng.lng, power: tx1.power };
+            const rxPoint = { lat: tx2.latlng.lat, lng: tx2.latlng.lng };
+            
+            const linkAnalysis = await linkBudgetCalculator.calculateLinkBudget(txPoint, rxPoint);
+            
+            // Store detailed link data
+            const linkId = [id1, id2].sort().join('-');
+            const linkData = {
+                analysis: linkAnalysis,
+                quality: linkAnalysis.linkQuality,
+                distance: linkAnalysis.distance,
+                linkMargin: linkAnalysis.linkBudget.linkMargin,
+                spreadingFactor: linkAnalysis.optimalSpreadingFactor,
+                hasObstructions: linkAnalysis.terrainAnalysis.hasObstructions,
+                recommendations: linkAnalysis.recommendations,
+                timestamp: linkAnalysis.timestamp
+            };
+            
+            // Draw the enhanced link line
+            this.drawEnhancedLinkLine(id1, id2, linkData);
+            
+        } catch (error) {
+            console.error('Advanced link calculation failed:', error);
+            
+            // Fallback to simple calculation
+            const distance = this.calculateDistance(tx1.latlng, tx2.latlng);
+            const quality = this.estimateLinkQuality(distance, tx1.power, tx2.power);
+            this.drawLinkLine(id1, id2, quality, null, true);
+        }
+    }
+
     estimateLinkQuality(distanceKm, power1, power2) {
-        // Simple distance-based estimation (will be replaced with proper RF model)
+        // Simple distance-based estimation (fallback only)
         const avgPower = (power1 + power2) / 2;
         const maxRange = avgPower >= 1.0 ? 15 : 8; // km
         
         if (distanceKm <= maxRange * 0.6) return 'good';
         if (distanceKm <= maxRange) return 'marginal';
         return 'poor';
+    }
+
+    /**
+     * Draw enhanced link line with comprehensive RF analysis data
+     */
+    drawEnhancedLinkLine(id1, id2, linkData) {
+        const tx1 = this.transmitters.get(id1);
+        const tx2 = this.transmitters.get(id2);
+        if (!tx1 || !tx2) return;
+        
+        const quality = linkData.quality;
+        const colors = {
+            excellent: '#059669', // Green-600
+            good: '#10b981',      // Emerald-500
+            marginal: '#f59e0b',  // Amber-500
+            poor: '#ef4444'       // Red-500
+        };
+        
+        // Line styling based on quality and obstructions
+        const lineOptions = {
+            color: colors[quality] || colors.poor,
+            weight: quality === 'excellent' ? 4 : quality === 'good' ? 3 : 2,
+            opacity: 0.8
+        };
+        
+        // Add dashed line for obstructed paths
+        if (linkData.hasObstructions) {
+            lineOptions.dashArray = '10, 5';
+        }
+        
+        const line = L.polyline([tx1.latlng, tx2.latlng], lineOptions).addTo(this.map);
+        
+        // Create detailed popup with RF analysis
+        const popup = this.createLinkPopup(tx1, tx2, linkData);
+        line.bindPopup(popup);
+        
+        // Store enhanced link data
+        const linkId = [id1, id2].sort().join('-');
+        this.linkLines.set(linkId, { 
+            line, 
+            quality, 
+            data: linkData,
+            enhanced: true 
+        });
+        
+        console.log(`Enhanced link ${linkId}: ${quality} (${linkData.distance.toFixed(2)}km, ${linkData.linkMargin.toFixed(1)}dB margin)`);
+    }
+
+    /**
+     * Create detailed popup for RF link analysis
+     */
+    createLinkPopup(tx1, tx2, linkData) {
+        const analysis = linkData.analysis;
+        const quality = linkData.quality;
+        const qualityEmojis = {
+            excellent: '🟢',
+            good: '🟡',
+            marginal: '🟠',
+            poor: '🔴'
+        };
+        
+        let obstacleInfo = '';
+        if (linkData.hasObstructions) {
+            obstacleInfo = `
+                <div class="obstacle-warning">
+                    ⚠️ Terrain obstructions detected<br>
+                    <small>Path may be blocked by hills/buildings</small>
+                </div>
+            `;
+        }
+        
+        let recommendations = '';
+        if (linkData.recommendations.length > 0) {
+            recommendations = `
+                <div class="recommendations">
+                    <strong>Recommendations:</strong><br>
+                    ${linkData.recommendations.slice(0, 3).map(rec => `<small>• ${rec}</small>`).join('<br>')}
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="link-popup">
+                <h4>${qualityEmojis[quality]} RF Link Analysis</h4>
+                <div class="link-stats">
+                    <table>
+                        <tr><td><strong>Distance:</strong></td><td>${linkData.distance.toFixed(2)} km</td></tr>
+                        <tr><td><strong>Link Quality:</strong></td><td>${quality.toUpperCase()}</td></tr>
+                        <tr><td><strong>Link Margin:</strong></td><td>${linkData.linkMargin.toFixed(1)} dB</td></tr>
+                        <tr><td><strong>Path Loss:</strong></td><td>${analysis.pathLoss.total.toFixed(1)} dB</td></tr>
+                        <tr><td><strong>RX Signal:</strong></td><td>${analysis.linkBudget.rxSignalStrength.toFixed(1)} dBm</td></tr>
+                        <tr><td><strong>Spreading Factor:</strong></td><td>${linkData.spreadingFactor}</td></tr>
+                        <tr><td><strong>Reliability:</strong></td><td>${analysis.linkBudget.reliability.toFixed(1)}%</td></tr>
+                    </table>
+                </div>
+                ${obstacleInfo}
+                ${recommendations}
+                <div class="link-path">
+                    <small><strong>Path:</strong> ${tx1.name} ↔ ${tx2.name}</small><br>
+                    <small><strong>Frequency:</strong> 915 MHz</small><br>
+                    <small><strong>Analysis:</strong> ${new Date(linkData.timestamp).toLocaleTimeString()}</small>
+                </div>
+            </div>
+        `;
     }
 
     drawLinkLine(id1, id2, quality) {
@@ -335,7 +486,7 @@ class LoRaMeshPlanner {
         
         // Store link with sorted IDs to avoid duplicates
         const linkId = [id1, id2].sort().join('-');
-        this.linkLines.set(linkId, { line, quality });
+        this.linkLines.set(linkId, { line, quality, enhanced: false });
     }
 
     removeLinkLines(transmitterId) {
@@ -348,7 +499,7 @@ class LoRaMeshPlanner {
         }
     }
 
-    async updateAllLinks() {
+    updateAllLinks() {
         // Clear all existing links
         this.linkLines.forEach(linkData => {
             this.map.removeLayer(linkData.line);
@@ -358,7 +509,7 @@ class LoRaMeshPlanner {
         // Recalculate all links
         const transmitterIds = Array.from(this.transmitters.keys());
         for (let i = 0; i < transmitterIds.length; i++) {
-            await this.updateLinksForTransmitter(transmitterIds[i]);
+            this.updateLinksForTransmitter(transmitterIds[i]);
         }
     }
 
@@ -383,8 +534,8 @@ class LoRaMeshPlanner {
         this.coverageCircles.clear();
     }
 
-    async showCoverageCircle(id, transmitter) {
-        // Always start with simple circle for fast, reliable coverage
+    showCoverageCircle(id, transmitter) {
+        // Simple circle for fast, reliable coverage
         const radiusKm = transmitter.power >= 1.0 ? 15 : 8;
         const radiusMeters = radiusKm * 1000;
         
@@ -396,116 +547,19 @@ class LoRaMeshPlanner {
             weight: 1
         }).addTo(this.map);
         
-        // Add popup with option to generate terrain-based coverage
+        // Add simple popup
         circle.bindPopup(`
             <div class="coverage-popup">
                 <h4>📡 LoRa Coverage</h4>
                 <p><strong>Power:</strong> ${transmitter.power}W</p>
                 <p><strong>Radius:</strong> ${radiusKm} km (estimated)</p>
-                <button onclick="window.meshPlanner.generateTerrainCoverage('${id}')" style="
-                    background: #2563eb;
-                    color: white;
-                    border: none;
-                    padding: 6px 12px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 12px;
-                    margin-top: 8px;
-                ">🏔️ Generate Terrain-Based Coverage</button>
-                <p><small>Click button for detailed terrain analysis</small></p>
+                <p><small>Simple circular coverage model</small></p>
             </div>
         `);
         
         this.coverageCircles.set(id, circle);
-        console.log(`✅ Simple coverage circle created for transmitter ${id}`);
     }
     
-    async generateTerrainCoverage(transmitterId) {
-        const transmitter = this.transmitters.get(transmitterId);
-        if (!transmitter) {
-            console.error(`Transmitter ${transmitterId} not found`);
-            return;
-        }
-        
-        console.log(`🏔️ Generating terrain-based coverage for transmitter ${transmitterId}`);
-        
-        // Show loading
-        this.showLoading(true);
-        
-        try {
-            // Generate terrain-based coverage polygon with moderate resolution to avoid crashes
-            const response = await fetch('/api/coverage', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    lat: transmitter.latlng.lat,
-                    lng: transmitter.latlng.lng,
-                    power: transmitter.power,
-                    resolution: 15, // 15 degree resolution = 24 rays (more conservative)
-                    maxRange: transmitter.power >= 1.0 ? 20 : 12 // Reduced max range for faster processing
-                })
-            });
-            
-            if (response.ok) {
-                const coverageData = await response.json();
-                
-                if (coverageData.success && coverageData.polygon && coverageData.polygon.length >= 3) {
-                    console.log(`✅ Received terrain data with ${coverageData.polygon.length} points`);
-                    
-                    // Remove the existing simple circle
-                    const existingCoverage = this.coverageCircles.get(transmitterId);
-                    if (existingCoverage) {
-                        this.map.removeLayer(existingCoverage);
-                    }
-                    
-                    // Sort points by angle to ensure proper polygon shape
-                    const sortedPoints = coverageData.polygon.sort((a, b) => a.angle - b.angle);
-                    
-                    // Convert polygon points to Leaflet format
-                    const polygonPoints = sortedPoints.map(point => [point.lat, point.lng]);
-                    
-                    // Create terrain-based coverage polygon
-                    const polygon = L.polygon(polygonPoints, {
-                        color: '#dc2626',
-                        fillColor: '#ef4444',
-                        fillOpacity: this.coverageOpacity,
-                        weight: 2,
-                        opacity: 0.8,
-                        smoothFactor: 1.0
-                    }).addTo(this.map);
-                    
-                    // Add detailed popup
-                    polygon.bindPopup(`
-                        <div class="coverage-popup">
-                            <h4>🌍 Terrain-Based Coverage</h4>
-                            <p><strong>Power:</strong> ${transmitter.power}W</p>
-                            <p><strong>Max Range:</strong> ${coverageData.maxRange.toFixed(1)} km</p>
-                            <p><strong>Avg Range:</strong> ${coverageData.avgRange.toFixed(1)} km</p>
-                            <p><strong>Analysis Points:</strong> ${coverageData.pointCount}</p>
-                            <p><small>✅ Real terrain & RF modeling</small></p>
-                        </div>
-                    `);
-                    
-                    // Replace the coverage area
-                    this.coverageCircles.set(transmitterId, polygon);
-                    
-                    this.showLoading(false);
-                    alert(`✅ Terrain-based coverage generated!\n\nMax Range: ${coverageData.maxRange.toFixed(1)} km\nAvg Range: ${coverageData.avgRange.toFixed(1)} km`);
-                    return;
-                } else {
-                    throw new Error('Invalid coverage data received');
-                }
-            } else {
-                throw new Error(`API responded with status ${response.status}`);
-            }
-        } catch (error) {
-            console.error('⚠️ Terrain-based coverage failed:', error);
-            this.showLoading(false);
-            alert('⚠️ Terrain-based coverage calculation failed.\nUsing simple circular coverage instead.\n\nThis could be due to:\n• Network connectivity issues\n• Elevation data service unavailable\n• Processing timeout');
-        }
-    }
 
     removeCoverageCircle(id) {
         const circle = this.coverageCircles.get(id);
@@ -521,14 +575,6 @@ class LoRaMeshPlanner {
         });
     }
 
-    async calculateRFLink(tx1, tx2, id1, id2) {
-        console.log('Using simple distance-based link calculation (API disabled for now)');
-        
-        // Use simple distance-based calculation for now
-        const distance = this.calculateDistance(tx1.latlng, tx2.latlng);
-        const quality = this.estimateLinkQuality(distance, tx1.power, tx2.power);
-        this.drawLinkLine(id1, id2, quality);
-    }
     
     showLoading(show) {
         const overlay = document.getElementById('loadingOverlay');
@@ -536,17 +582,6 @@ class LoRaMeshPlanner {
             overlay.classList.remove('hidden');
         } else {
             overlay.classList.add('hidden');
-        }
-    }
-    
-    updateModelingStatus() {
-        const statusElement = document.getElementById('modelingStatus');
-        if (this.terrainModeling) {
-            statusElement.textContent = '🏔️ Using advanced terrain modeling';
-            statusElement.style.color = '#dc2626';
-        } else {
-            statusElement.textContent = '⭕ Using fast circular coverage';
-            statusElement.style.color = '#6b7280';
         }
     }
 
